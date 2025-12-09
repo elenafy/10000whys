@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-    FILTER_AGES, 
-    SAMPLE_VIDEOS 
+    FILTER_AGES
 } from '../constants';
 import { VideoCard } from '../components/VideoCard';
+import { getApprovedVideos } from '../services/videos';
+import { VideoRecommendation } from '../types';
 
 // New Topic Groupings for the UI
 const VIDEO_TOPIC_FILTERS = [
@@ -23,6 +24,27 @@ export const Videos: React.FC = () => {
   const [selectedTopic, setSelectedTopic] = useState('All');
   const [selectedAge, setSelectedAge] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Firebase data state
+  const [allVideos, setAllVideos] = useState<VideoRecommendation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch videos from Firebase
+  useEffect(() => {
+    const fetchVideos = async () => {
+      try {
+        setLoading(true);
+        const videos = await getApprovedVideos();
+        setAllVideos(videos);
+      } catch (error) {
+        console.error('Error fetching videos:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVideos();
+  }, []);
 
   const clearFilters = () => {
       setSelectedTopic('All');
@@ -75,14 +97,14 @@ export const Videos: React.FC = () => {
       }
   };
 
-  const displayedVideos = SAMPLE_VIDEOS.filter(v => {
+  const displayedVideos = allVideos.filter(v => {
       const topicMatch = checkTopicMatch(v.topic, selectedTopic);
       const ageMatch = checkAgeMatch(v.ageRange, selectedAge);
       
       return topicMatch && ageMatch;
   });
 
-  const featuredVideos = SAMPLE_VIDEOS.slice(0, 4);
+  const featuredVideos = allVideos.slice(0, 4);
 
   return (
     <div className="min-h-screen bg-white pb-32">
@@ -180,12 +202,19 @@ export const Videos: React.FC = () => {
                         <span className="text-3xl">⭐</span>
                         <h2 className="font-display text-3xl font-bold text-slate-800">Featured Videos</h2>
                     </div>
-                    {/* Max 4 columns */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                        {featuredVideos.map((video, idx) => (
-                            <VideoCard key={`featured-${idx}`} video={video} fluid={true} />
+                    {loading ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                        {[1, 2, 3, 4].map((i) => (
+                          <div key={i} className="h-64 bg-slate-100 rounded-3xl animate-pulse"></div>
                         ))}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                        {featuredVideos.map((video) => (
+                            <VideoCard key={video.id || video.youtubeQuery} video={video} fluid={true} />
+                        ))}
+                      </div>
+                    )}
                 </section>
             )}
 
@@ -213,11 +242,17 @@ export const Videos: React.FC = () => {
                     )}
                 </div>
                 
-                {/* Max 4 columns */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
+                {loading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                      <div key={i} className="h-64 bg-slate-100 rounded-3xl animate-pulse"></div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
                     {displayedVideos.length > 0 ? (
-                        displayedVideos.map((v, i) => (
-                            <VideoCard key={i} video={v} fluid={true} />
+                        displayedVideos.map((v) => (
+                            <VideoCard key={v.id || v.youtubeQuery} video={v} fluid={true} />
                         ))
                     ) : (
                         <div className="col-span-full py-32 text-center rounded-[4rem] bg-slate-50 border border-slate-100 border-dashed">
@@ -232,7 +267,8 @@ export const Videos: React.FC = () => {
                             </button>
                         </div>
                     )}
-                </div>
+                  </div>
+                )}
             </section>
 
         </div>

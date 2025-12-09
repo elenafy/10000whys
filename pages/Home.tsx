@@ -1,21 +1,64 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-    TRUSTED_VIDEOS_FEED, 
-    SAMPLE_ACTIVITIES,
     POPULAR_QUESTION_PILLS,
-    CATEGORIES,
-    SAMPLE_QUESTIONS
+    CATEGORIES
 } from '../constants';
 import { VideoCard } from '../components/VideoCard';
 import { ActivityCard } from '../components/ActivityCard';
 import { QuestionCard } from '../components/QuestionCard';
+import { getFeaturedQuestions } from '../services/questions';
+import { getApprovedVideos } from '../services/videos';
+import { getApprovedActivities } from '../services/activities';
+import { QuestionData, Activity, VideoRecommendation } from '../types';
 
 export const Home: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showMobilePills, setShowMobilePills] = useState(false);
   const navigate = useNavigate();
+  
+  const renderCategoryIcon = (cat: typeof CATEGORIES[number]) => {
+    if (cat.icon) {
+      return (
+        <img 
+          src={cat.icon} 
+          alt={`${cat.name} icon`} 
+          className="w-9 h-9 object-contain drop-shadow-sm"
+        />
+      );
+    }
+    return <span className="text-2xl">{cat.emoji}</span>;
+  };
+
+  // Firebase data state
+  const [featuredQuestions, setFeaturedQuestions] = useState<QuestionData[]>([]);
+  const [videos, setVideos] = useState<VideoRecommendation[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch data from Firebase
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [questions, videosData, activitiesData] = await Promise.all([
+          getFeaturedQuestions(4),
+          getApprovedVideos(),
+          getApprovedActivities()
+        ]);
+        setFeaturedQuestions(questions);
+        setVideos(videosData.slice(0, 4)); // Show first 4 videos
+        setActivities(activitiesData.slice(0, 4)); // Show first 4 activities
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,11 +148,19 @@ export const Home: React.FC = () => {
               </button>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-8">
-              {SAMPLE_QUESTIONS.slice(0, 4).map((q, idx) => (
-                  <QuestionCard key={idx} question={q} />
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-8">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-64 bg-slate-100 rounded-3xl animate-pulse"></div>
               ))}
-          </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-8">
+              {featuredQuestions.map((q) => (
+                <QuestionCard key={q.id} question={q} />
+              ))}
+            </div>
+          )}
       </section>
 
       {/* 3. EXPLORE BY TOPIC */}
@@ -124,7 +175,7 @@ export const Home: React.FC = () => {
                     onClick={() => navigate(`/category/${cat.id}`)}
                     className="px-6 py-3 md:px-8 md:py-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-600 font-bold hover:bg-white hover:border-brand-purple hover:text-brand-purple hover:shadow-md transition-all active:scale-95 text-lg md:text-xl flex items-center gap-3"
                   >
-                      <span>{cat.emoji}</span>
+                      {renderCategoryIcon(cat)}
                       <span>{cat.name}</span>
                   </button>
               ))}
@@ -142,11 +193,19 @@ export const Home: React.FC = () => {
             </p>
          </div>
          
-         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
-            {TRUSTED_VIDEOS_FEED.map((video, idx) => (
-                <VideoCard key={idx} video={video} fluid={true} />
-            ))}
-         </div>
+         {loading ? (
+           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+             {[1, 2, 3, 4].map((i) => (
+               <div key={i} className="h-64 bg-slate-100 rounded-3xl animate-pulse"></div>
+             ))}
+           </div>
+         ) : (
+           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+             {videos.map((video) => (
+               <VideoCard key={video.id || video.youtubeQuery} video={video} fluid={true} />
+             ))}
+           </div>
+         )}
 
          <div className="text-center">
             <button 
@@ -169,11 +228,19 @@ export const Home: React.FC = () => {
             </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-8">
-            {SAMPLE_ACTIVITIES.slice(0, 4).map((activity, idx) => (
-                <ActivityCard key={idx} activity={activity} compact={true} />
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-64 bg-slate-100 rounded-3xl animate-pulse"></div>
             ))}
-        </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-8">
+            {activities.map((activity) => (
+              <ActivityCard key={activity.id} activity={activity} compact={true} />
+            ))}
+          </div>
+        )}
 
         <div className="text-center">
             <button 

@@ -8,6 +8,8 @@ export interface VideoRecommendation {
   duration?: string;
   topic?: string;
   ageRange?: string;
+  questionId?: string;
+  relatedQuestionId?: string;
 }
 
 export interface Activity {
@@ -23,6 +25,7 @@ export interface Activity {
   relatedQuestionId?: string;
   icon?: string; // Emoji or icon name
   imageUrl?: string; // URL for banner image
+  thumbnailUrl?: string; // Smaller image for lists/cards
   
   // New Detailed Fields
   curiositySpark?: string; // A hook/question
@@ -39,6 +42,8 @@ export interface QuestionData {
   id: string;
   questionText: string;
   explanation: string;
+  shortExplanationKid?: string;
+  explanationParent?: string;
   ageRange: string;
   topic: string;
   takeaways: string[];
@@ -64,6 +69,7 @@ export interface CategoryDefinition {
   name: string;
   description: string;
   emoji: string;
+  icon?: string; // Optional custom icon asset
   color: string;
   tags: string[]; // Maps to data topics (e.g., ["Nature", "Animals"])
 }

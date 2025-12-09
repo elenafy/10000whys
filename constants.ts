@@ -1,5 +1,11 @@
 
 import { QuestionData, Activity, ActivityCollection, VideoRecommendation, CategoryDefinition } from "./types";
+import natureAnimalsIcon from './assets/theme-icons/nature-animals.svg';
+import spaceWeatherIcon from './assets/theme-icons/space-weather.svg';
+import everydayScienceIcon from './assets/theme-icons/everyday-science.svg';
+import feelingsFamiliesIcon from './assets/theme-icons/feelings-families.svg';
+import howWorldWorksIcon from './assets/theme-icons/how-world-works.svg';
+import culturePeopleIcon from './assets/theme-icons/culture-people.svg';
 
 export const TRUSTED_CHANNELS = [
   "SciShow Kids",
@@ -20,6 +26,7 @@ export const CATEGORIES: CategoryDefinition[] = [
     name: "Nature & Animals",
     description: "Explore the living world—from tiny insects to giant ocean creatures. Learn how animals survive, how plants grow, and how different habitats work together.",
     emoji: "🌿",
+    icon: natureAnimalsIcon,
     color: "bg-green-100 text-green-700",
     tags: ["Nature", "Animals", "Insects", "Oceans", "Plants"]
   },
@@ -28,6 +35,7 @@ export const CATEGORIES: CategoryDefinition[] = [
     name: "Space & Weather",
     description: "Discover what’s happening above us. From the sun and moon to rainstorms and rainbows, kids learn how space and weather shape our world every day.",
     emoji: "🌌",
+    icon: spaceWeatherIcon,
     color: "bg-indigo-100 text-indigo-700",
     tags: ["Space", "Weather", "Planets", "Stars"]
   },
@@ -36,6 +44,7 @@ export const CATEGORIES: CategoryDefinition[] = [
     name: "Everyday Science",
     description: "Hands-on science kids can see, touch, and try at home. Simple experiments and explanations about how things move, mix, float, and change.",
     emoji: "🔍",
+    icon: everydayScienceIcon,
     color: "bg-blue-100 text-blue-700",
     tags: ["Science", "Kitchen Science", "Physics", "Chemistry"]
   },
@@ -44,6 +53,7 @@ export const CATEGORIES: CategoryDefinition[] = [
     name: "Feelings & Families",
     description: "Help kids understand themselves and the people they love. Explore emotions, body awareness, and the ways families communicate and grow.",
     emoji: "💛",
+    icon: feelingsFamiliesIcon,
     color: "bg-yellow-100 text-yellow-700",
     tags: ["Human Body", "Social", "Feelings", "Health"]
   },
@@ -52,6 +62,7 @@ export const CATEGORIES: CategoryDefinition[] = [
     name: "How the World Works",
     description: "For curious kids who love machines, vehicles, and building. Learn how everyday things around us work—from bridges and airplanes to jobs people do.",
     emoji: "🛠️",
+    icon: howWorldWorksIcon,
     color: "bg-slate-200 text-slate-700",
     tags: ["Engineering", "How Things Work", "Technology", "Vehicles"]
   },
@@ -60,6 +71,7 @@ export const CATEGORIES: CategoryDefinition[] = [
     name: "Culture & People",
     description: "See how people live around the world. Explore countries, cities, traditions, celebrations, and the many ways communities create meaning.",
     emoji: "🌍",
+    icon: culturePeopleIcon,
     color: "bg-rose-100 text-rose-700",
     tags: ["History", "Culture", "People", "Places"]
   }

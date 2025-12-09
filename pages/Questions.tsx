@@ -1,8 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SAMPLE_QUESTIONS, TOPICS, FILTER_AGES } from '../constants';
+import { TOPICS, FILTER_AGES } from '../constants';
 import { QuestionCard } from '../components/QuestionCard';
+import { getApprovedQuestions } from '../services/questions';
+import { QuestionData } from '../types';
 
 export const Questions: React.FC = () => {
   const navigate = useNavigate();
@@ -11,9 +13,28 @@ export const Questions: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('All');
   const [selectedAge, setSelectedAge] = useState('All');
+  const [visibleCount, setVisibleCount] = useState(12);
   
-  // Initialize with a lower count (4) to ensure "Load More" appears with sample data
-  const [visibleCount, setVisibleCount] = useState(4);
+  // Firebase data state
+  const [allQuestions, setAllQuestions] = useState<QuestionData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch questions from Firebase
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        setLoading(true);
+        const questions = await getApprovedQuestions();
+        setAllQuestions(questions);
+      } catch (error) {
+        console.error('Error fetching questions:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuestions();
+  }, []);
 
   // Search Handler
   const handleSearch = (e: React.FormEvent) => {
@@ -30,11 +51,16 @@ export const Questions: React.FC = () => {
       return qAge.includes(filterAge) || qAge === filterAge;
   };
 
-  const filteredQuestions = SAMPLE_QUESTIONS.filter(q => {
-      const matchesSearch = q.questionText.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesTopic = selectedTopic === 'All' || q.topic === selectedTopic;
-      const matchesAge = checkAgeMatch(q.ageRange, selectedAge);
-      return matchesSearch && matchesTopic && matchesAge;
+  const filteredQuestions = allQuestions.filter((q) => {
+    if (!q) return false;
+    const questionText = q.questionText ?? '';
+    const topic = q.topic ?? '';
+    const ageRange = q.ageRange ?? '';
+
+    const matchesSearch = questionText.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesTopic = selectedTopic === 'All' || topic === selectedTopic;
+    const matchesAge = checkAgeMatch(ageRange, selectedAge);
+    return matchesSearch && matchesTopic && matchesAge;
   });
 
   // Pagination Handler
@@ -151,12 +177,19 @@ export const Questions: React.FC = () => {
                     </div>
                 </div>
 
-                {/* The missing grid logic */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-8">
-                    {filteredQuestions.slice(0, visibleCount).map((q, idx) => (
-                        <QuestionCard key={idx} question={q} />
+                {loading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-8">
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                      <div key={i} className="h-64 bg-slate-100 rounded-3xl animate-pulse"></div>
                     ))}
-                </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-8">
+                    {filteredQuestions.slice(0, visibleCount).map((q) => (
+                      <QuestionCard key={q.id} question={q} />
+                    ))}
+                  </div>
+                )}
 
                 {filteredQuestions.length === 0 && (
                      <div className="bg-slate-50 rounded-3xl p-16 text-center border border-slate-100 border-dashed">

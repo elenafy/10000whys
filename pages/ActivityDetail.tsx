@@ -1,12 +1,44 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { SAMPLE_ACTIVITIES } from '../constants';
+import { getApprovedActivityById } from '../services/activities';
+import { Activity } from '../types';
 
 export const ActivityDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const activity = SAMPLE_ACTIVITIES.find(a => a.id === id);
+  const [activity, setActivity] = useState<Activity | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchActivity = async () => {
+      if (!id) {
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        setLoading(true);
+        const activityData = await getApprovedActivityById(id);
+        setActivity(activityData);
+      } catch (error) {
+        console.error('Error fetching activity:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchActivity();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center p-6">
+        <div className="w-24 h-24 border-8 border-brand-blue border-t-transparent rounded-full animate-spin mb-10"></div>
+        <h2 className="font-display text-4xl font-bold text-brand-purple animate-pulse">Loading activity...</h2>
+      </div>
+    );
+  }
 
   if (!activity) {
     return (
@@ -55,9 +87,9 @@ export const ActivityDetail: React.FC = () => {
              </div>
              
              {/* Hero Image */}
-             {activity.imageUrl && (
+             {(activity.imageUrl || activity.thumbnailUrl) && (
                  <div className="w-full md:w-1/3 aspect-video md:aspect-square rounded-3xl overflow-hidden shadow-lg border-4 border-white rotate-2 hover:rotate-0 transition-transform duration-500">
-                     <img src={activity.imageUrl} alt={activity.title} className="w-full h-full object-cover" />
+                     <img src={activity.imageUrl || activity.thumbnailUrl} alt={activity.title} className="w-full h-full object-cover" />
                  </div>
              )}
            </div>

@@ -33,10 +33,6 @@ export const QuestionCard: React.FC<Props> = ({ question, featured = false }) =>
         
         {/* Explanation removed to keep card concise */}
 
-        <div className="mt-auto flex items-center justify-end text-brand-blue font-bold text-sm">
-            <span>Discover Answer</span>
-            <svg className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-        </div>
       </div>
     </Link>
   );

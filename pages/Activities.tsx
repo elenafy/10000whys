@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ACTIVITY_CATEGORIES, FILTER_AGES, FILTER_TIMES, SAMPLE_ACTIVITIES } from '../constants';
+import { ACTIVITY_CATEGORIES, FILTER_AGES, FILTER_TIMES } from '../constants';
 import { ActivityCard } from '../components/ActivityCard';
 import { Activity } from '../types';
+import { getApprovedActivities } from '../services/activities';
 
 export const Activities: React.FC = () => {
   const navigate = useNavigate();
@@ -12,6 +13,27 @@ export const Activities: React.FC = () => {
   const [selectedTopic, setSelectedTopic] = useState('All');
   const [selectedAge, setSelectedAge] = useState('All');
   const [selectedTime, setSelectedTime] = useState('All');
+  
+  // Firebase data state
+  const [allActivities, setAllActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch activities from Firebase
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        setLoading(true);
+        const activities = await getApprovedActivities();
+        setAllActivities(activities);
+      } catch (error) {
+        console.error('Error fetching activities:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchActivities();
+  }, []);
 
   // Quick collections configuration (shortcuts that set specific filters)
   const quickCollections = [
@@ -64,7 +86,7 @@ export const Activities: React.FC = () => {
   };
 
   // Compute displayed activities based on ALL selected filters
-  const displayedActivities = SAMPLE_ACTIVITIES.filter(a => {
+  const displayedActivities = allActivities.filter(a => {
       const topicMatch = selectedTopic === 'All' || a.category === selectedTopic || a.topic === selectedTopic;
       const ageMatch = checkAgeMatch(a.ageRange, selectedAge);
       const timeMatch = checkTimeMatch(a.timeEstimate, selectedTime);
@@ -81,7 +103,7 @@ export const Activities: React.FC = () => {
   };
 
   // Recommended activities (Featured Today)
-  const recommendedActivities = SAMPLE_ACTIVITIES.slice(0, 4);
+  const recommendedActivities = allActivities.slice(0, 4);
 
   return (
     <div className="min-h-screen bg-white pb-32">
@@ -172,12 +194,19 @@ export const Activities: React.FC = () => {
                         <span className="text-3xl">🌟</span>
                         <h2 className="font-display text-3xl font-bold text-slate-800">Recommended for Today</h2>
                     </div>
-                    {/* Max 4 columns */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
-                        {recommendedActivities.map((activity, idx) => (
-                            <ActivityCard key={idx} activity={activity} />
+                    {loading ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
+                        {[1, 2, 3, 4].map((i) => (
+                          <div key={i} className="h-64 bg-slate-100 rounded-3xl animate-pulse"></div>
                         ))}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
+                        {recommendedActivities.map((activity) => (
+                          <ActivityCard key={activity.id} activity={activity} />
+                        ))}
+                      </div>
+                    )}
                 </section>
             )}
 
@@ -229,11 +258,17 @@ export const Activities: React.FC = () => {
                     )}
                 </div>
                 
-                {/* Max 4 columns */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
+                {loading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                      <div key={i} className="h-64 bg-slate-100 rounded-3xl animate-pulse"></div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
                     {displayedActivities.length > 0 ? (
-                        displayedActivities.map((act, i) => (
-                            <ActivityCard key={i} activity={act} />
+                        displayedActivities.map((act) => (
+                            <ActivityCard key={act.id} activity={act} />
                         ))
                     ) : (
                         <div className="col-span-full py-32 text-center rounded-[4rem] bg-slate-50 border border-slate-100 border-dashed">
@@ -248,7 +283,8 @@ export const Activities: React.FC = () => {
                             </button>
                         </div>
                     )}
-                </div>
+                  </div>
+                )}
             </section>
 
         </div>

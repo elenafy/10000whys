@@ -1,18 +1,80 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { CATEGORIES, SAMPLE_ACTIVITIES, SAMPLE_VIDEOS, SAMPLE_QUESTIONS } from '../constants';
+import { CATEGORIES } from '../constants';
 import { ActivityCard } from '../components/ActivityCard';
 import { VideoCard } from '../components/VideoCard';
 import { QuestionCard } from '../components/QuestionCard';
+import { getQuestionsByTopic } from '../services/questions';
+import { getActivitiesByCategory } from '../services/activities';
+import { getVideosByTopic } from '../services/videos';
+import { QuestionData, Activity, VideoRecommendation } from '../types';
 
 export const CategoryDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const category = CATEGORIES.find(c => c.id === id);
   
+  const renderCategoryIcon = (cat: typeof CATEGORIES[number], sizeClass = 'w-20 h-20') => {
+    if (cat.icon) {
+      return (
+        <img 
+          src={cat.icon} 
+          alt={`${cat.name} icon`} 
+          className={`${sizeClass} object-contain drop-shadow-sm`}
+        />
+      );
+    }
+    return <span className={`${sizeClass} text-6xl`}>{cat.emoji}</span>;
+  };
+  
   // State for question pagination
   const [visibleQuestions, setVisibleQuestions] = useState(5);
+  
+  // Firebase data state
+  const [questions, setQuestions] = useState<QuestionData[]>([]);
+  const [videos, setVideos] = useState<VideoRecommendation[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch category content from Firebase
+  useEffect(() => {
+    const fetchCategoryContent = async () => {
+      if (!category) return;
+      
+      try {
+        setLoading(true);
+        // Fetch all content that matches any of the category tags
+        const [allQuestions, allVideos, allActivities] = await Promise.all([
+          Promise.all(category.tags.map(tag => getQuestionsByTopic(tag))).then(results => 
+            results.flat().filter((q, index, self) => 
+              index === self.findIndex(t => t.id === q.id)
+            )
+          ),
+          Promise.all(category.tags.map(tag => getVideosByTopic(tag))).then(results => 
+            results.flat().filter((v, index, self) => 
+              index === self.findIndex(t => (t.id || t.youtubeQuery) === (v.id || v.youtubeQuery))
+            )
+          ),
+          Promise.all(category.tags.map(tag => getActivitiesByCategory(tag))).then(results => 
+            results.flat().filter((a, index, self) => 
+              index === self.findIndex(t => t.id === a.id)
+            )
+          )
+        ]);
+        
+        setQuestions(allQuestions);
+        setVideos(allVideos);
+        setActivities(allActivities);
+      } catch (error) {
+        console.error('Error fetching category content:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategoryContent();
+  }, [category]);
 
   if (!category) {
     return (
@@ -29,13 +91,6 @@ export const CategoryDetail: React.FC = () => {
     );
   }
 
-  // Filter content based on category tags
-  const videos = SAMPLE_VIDEOS.filter(v => v.topic && category.tags.includes(v.topic));
-  const activities = SAMPLE_ACTIVITIES.filter(a => (a.topic && category.tags.includes(a.topic)) || (a.category && category.tags.includes(a.category)));
-  
-  // Filter questions based on category tags
-  const questions = SAMPLE_QUESTIONS.filter(q => q.topic && category.tags.includes(q.topic));
-  
   const otherCategories = CATEGORIES.filter(c => c.id !== id).slice(0, 4);
 
   const handleLoadMoreQuestions = () => {
@@ -51,7 +106,9 @@ export const CategoryDetail: React.FC = () => {
            <Link to="/" className="inline-block mb-8 text-slate-500 font-bold hover:text-brand-purple">
              ← Back Home
            </Link>
-           <div className="text-6xl mb-6">{category.emoji}</div>
+           <div className="flex justify-center mb-6">
+             {renderCategoryIcon(category)}
+           </div>
            <h1 className={`font-display text-5xl md:text-6xl font-bold mb-6 ${category.color.split(' ')[1]}`}>
              {category.name}
            </h1>
@@ -70,11 +127,17 @@ export const CategoryDetail: React.FC = () => {
                 <h2 className="font-display text-3xl font-bold text-slate-800">Questions</h2>
              </div>
 
-             {questions.length > 0 ? (
+             {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="h-64 bg-slate-100 rounded-3xl animate-pulse"></div>
+                  ))}
+                </div>
+             ) : questions.length > 0 ? (
                 <>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                        {questions.slice(0, visibleQuestions).map((q, idx) => (
-                            <QuestionCard key={idx} question={q} />
+                        {questions.slice(0, visibleQuestions).map((q) => (
+                            <QuestionCard key={q.id} question={q} />
                         ))}
                     </div>
                     
@@ -103,10 +166,16 @@ export const CategoryDetail: React.FC = () => {
              <h2 className="font-display text-3xl font-bold text-slate-800">Watch & Learn</h2>
           </div>
           
-          {videos.length > 0 ? (
+          {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-               {videos.map((video, idx) => (
-                  <VideoCard key={idx} video={video} fluid={true} />
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-64 bg-slate-100 rounded-3xl animate-pulse"></div>
+              ))}
+            </div>
+          ) : videos.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+               {videos.map((video) => (
+                  <VideoCard key={video.id || video.youtubeQuery} video={video} fluid={true} />
                ))}
             </div>
           ) : (
@@ -129,10 +198,16 @@ export const CategoryDetail: React.FC = () => {
              <h2 className="font-display text-3xl font-bold text-slate-800">Try It at Home</h2>
           </div>
           
-          {activities.length > 0 ? (
+          {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-               {activities.map((activity, idx) => (
-                  <ActivityCard key={idx} activity={activity} />
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-64 bg-slate-100 rounded-3xl animate-pulse"></div>
+              ))}
+            </div>
+          ) : activities.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+               {activities.map((activity) => (
+                  <ActivityCard key={activity.id} activity={activity} />
                ))}
             </div>
           ) : (
@@ -161,7 +236,7 @@ export const CategoryDetail: React.FC = () => {
                        to={`/category/${cat.id}`}
                        className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-brand-blue hover:-translate-y-1 transition-all"
                      >
-                        <span className="text-2xl">{cat.emoji}</span>
+                        {renderCategoryIcon(cat, 'w-10 h-10')}
                         <span className="font-bold text-slate-700 text-lg">{cat.name}</span>
                      </Link>
                   ))}

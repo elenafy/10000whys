@@ -20,9 +20,9 @@ export const ActivityCard: React.FC<Props> = ({ activity, compact = false }) => 
       
       {/* Banner Image */}
       <div className={`relative ${compact ? 'h-48' : 'h-52'} bg-slate-100 overflow-hidden`}>
-          {activity.imageUrl ? (
+          {activity.imageUrl || activity.thumbnailUrl ? (
               <img 
-                src={activity.imageUrl} 
+                src={activity.imageUrl || activity.thumbnailUrl} 
                 alt={activity.title} 
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
